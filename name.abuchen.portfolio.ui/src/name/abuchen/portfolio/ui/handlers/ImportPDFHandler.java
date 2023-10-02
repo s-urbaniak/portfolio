@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -37,6 +38,7 @@ import name.abuchen.portfolio.datatransfer.pdf.PDFImportAssistant;
 import name.abuchen.portfolio.model.Account;
 import name.abuchen.portfolio.model.Client;
 import name.abuchen.portfolio.model.Portfolio;
+import name.abuchen.portfolio.snapshot.filter.PortfolioClientFilter;
 import name.abuchen.portfolio.ui.Messages;
 import name.abuchen.portfolio.ui.PortfolioPlugin;
 import name.abuchen.portfolio.ui.UIConstants;
@@ -164,14 +166,15 @@ public class ImportPDFHandler
         files.sort(Comparator.comparing(File::lastModified).thenComparing(File::getPath));
 
         IPreferenceStore preferences = part.getPreferenceStore();
-
         try
         {
             Map<File, List<Exception>> errors = new HashMap<>();
             Map<Extractor, List<Extractor.Item>> result = new HashMap<>();
+            Client maybeFilteredClient = Optional.ofNullable(portfolio)
+                            .map(p -> new PortfolioClientFilter(portfolio).filter(client)).orElse(client);
 
             IRunnableWithProgress operation = monitor -> {
-                PDFImportAssistant assistent = new PDFImportAssistant(client, files);
+                PDFImportAssistant assistent = new PDFImportAssistant(maybeFilteredClient, files);
                 result.putAll(assistent.run(monitor, errors));
             };
 
